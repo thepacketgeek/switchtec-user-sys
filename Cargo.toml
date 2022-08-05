@@ -1,0 +1,23 @@
+[package]
+name = "switchtec-user-sys"
+version = "0.1.0"
+authors = ["Mat Wood <thepacketgeek@users.noreply.github.com>"]
+description = "Rust wrapper for the switchtec-user C library"
+categories = ["external-ffi-bindings", "hardware-support"]
+keywords = ["switchtec", "pciswitch", "microsemi"]
+edition = "2021"
+homepage = "https://github.com/thepacketgeek/switchtec-user-sys"
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/switchtec-user-sys"
+readme = "README.md"
+repository = "https://github.com/thepacketgeek/switchtec-user-sys"
+
+[dependencies]
+thiserror = "1.0"
+
+[build-dependencies]
+bindgen = "0.60"
+cc = { version = "1.0", features = ["parallel"] }
+
+[dev-dependencies]
+anyhow = "1.0"
