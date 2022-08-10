@@ -3,6 +3,14 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn main() {
+    // Make sure that switchtec-user submodule is available locally
+    Command::new("git")
+        .arg("submodule")
+        .arg("update")
+        .arg("--init")
+        .output()
+        .expect("couldn't download switchtec-user submodule");
+
     // Generate Rust Bindings for C Library
     let bindings = bindgen::Builder::default()
         .header("switchtec-user/inc/switchtec/switchtec.h")
