@@ -1,8 +1,12 @@
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let out_path = PathBuf::from(&out_dir);
+    let orig_dir = env::current_dir().unwrap();
+
     // Make sure that switchtec-user submodule is available locally
     Command::new("git")
         .arg("submodule")
@@ -23,20 +27,24 @@ fn main() {
         .generate()
         .expect("Unable to generate bindings");
 
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Unable to save bindings");
 
     // Compile switchtec-user library
-    let previous_dir = env::current_dir().unwrap();
-    env::set_current_dir(&Path::new("switchtec-user")).unwrap();
-    Command::new("./configure")
+    env::set_current_dir(&out_path).unwrap();
+
+    let root_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let root_path: PathBuf = [&root_dir, "switchtec-user", "configure"].iter().collect();
+    Command::new(&root_path)
         .output()
         .expect("couldn't run ./configure");
-    env::set_current_dir(&previous_dir).unwrap();
+
+    env::set_current_dir(&orig_dir).unwrap();
+
     cc::Build::new()
         .include("switchtec-user/inc")
+        .include(&out_dir)
         .include("switchtec-user")
         .include("switchtec-user/lib")
         .include("switchtec-user/lib/platform")
