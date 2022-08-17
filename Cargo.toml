@@ -1,6 +1,6 @@
 [package]
 name = "switchtec-user-sys"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["Mat Wood <thepacketgeek@users.noreply.github.com>"]
 description = "Rust wrapper for the switchtec-user C library"
 categories = ["external-ffi-bindings", "hardware-support"]

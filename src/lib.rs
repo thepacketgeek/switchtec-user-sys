@@ -3,6 +3,7 @@
 #![allow(non_snake_case)]
 #![allow(improper_ctypes)]
 #![allow(clippy::missing_safety_doc)]
+#![doc = include_str!("../README.md")]
 
 use std::ffi::{CStr, CString};
 use std::fmt;
@@ -49,7 +50,7 @@ where
     /// # fn main() -> anyhow::Result<()> {
     /// let device = SwitchtecDevice::new("/dev/pciswitch0").open()?;
     ///
-    /// // unsafe because `switchtec_die_temp` is an extern function
+    /// // SAFETY: We know that device holds a valid/open switchtec device
     /// let temperature = unsafe { switchtec_die_temp(*device) };
     /// println!("Temperature: {temperature}");
     /// // Switchtec device is closed with `device` goes out of scope
@@ -77,7 +78,7 @@ where
 /// Closes the Switchtec character device when this goes out of scope
 #[must_use]
 pub struct SwitchtecDeviceGuard {
-    pub inner: *mut switchtec_dev,
+    inner: *mut switchtec_dev,
 }
 
 impl SwitchtecDeviceGuard {
@@ -119,6 +120,53 @@ impl std::ops::Drop for SwitchtecDeviceGuard {
         // is not null;
         unsafe {
             switchtec_close(self.inner);
+        }
+    }
+}
+
+pub trait CStrExt {
+    /// Convert a C-style string (E.g. `char*`) to a Rust [`String`]
+    ///
+    /// Returns an [`io::Error`] if the string pointer is null or cannot be
+    fn as_string(&self) -> io::Result<String>;
+}
+
+impl CStrExt for *const i8 {
+    /// Copy a C-style `*const i8` string to a [`String`]
+    ///
+    /// ```
+    /// use switchtec_user_sys::CStrExt;
+    /// # use std::ffi::CString;
+    ///
+    /// # fn main() -> anyhow::Result<()> {
+    /// let cstr = CString::new(*b"hello")?;
+    /// // This is a type you might receive from an extern "C" function:
+    /// let str_value: *const i8 = cstr.as_ptr() as *const i8;
+    ///
+    /// let rust_string: String = str_value.as_string()?;
+    /// assert_eq!(&rust_string, "hello");
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    fn as_string(&self) -> io::Result<String> {
+        cstr_to_string(*self)
+    }
+}
+
+fn cstr_to_string(cstr: *const i8) -> io::Result<String> {
+    if cstr.is_null() {
+        Ok("".to_owned())
+    } else {
+        // SAFETY: cstr has been checked for null, we can safely dereference
+        unsafe {
+            let s = CStr::from_ptr(cstr).to_owned();
+            s.into_string().map_err(|e| {
+                io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("error decoding String from {cstr:?}: {e}"),
+                )
+            })
         }
     }
 }
