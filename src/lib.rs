@@ -154,6 +154,29 @@ impl CStrExt for *const i8 {
     }
 }
 
+impl CStrExt for *mut i8 {
+    /// Copy a C-style `*mut i8` string to a [`String`]
+    ///
+    /// ```
+    /// use switchtec_user_sys::CStrExt;
+    /// # use std::ffi::CString;
+    ///
+    /// # fn main() -> anyhow::Result<()> {
+    /// let cstr = CString::new(*b"hello")?;
+    /// // This is a type you might receive from an extern "C" function:
+    /// let str_value: *mut i8 = cstr.as_ptr() as *mut i8;
+    ///
+    /// let rust_string: String = str_value.as_string()?;
+    /// assert_eq!(&rust_string, "hello");
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    fn as_string(&self) -> io::Result<String> {
+        cstr_to_string(*self)
+    }
+}
+
 fn cstr_to_string(cstr: *const i8) -> io::Result<String> {
     if cstr.is_null() {
         Ok("".to_owned())

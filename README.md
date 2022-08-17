@@ -5,6 +5,7 @@ Details and usage instructions for the `switchtec-user` library can be found [he
 
 
 # Example Usage
+The examples below use the [`SwitchtecDevice`] and [`CStrExt`] types introduced by this library, including functions from the [`switchtec-user`](https://github.com/Microsemi/switchtec-user) C library that this crate wraps.
 
 ## Get pciswitch device name and temperature
 Example using the [`switchtec_name`](https://microsemi.github.io/switchtec-user/group__Device.html#ga8d416a587f5e37e818ee937bd0c0dab1) and [`switchtec_die_temp`](https://microsemi.github.io/switchtec-user/group__Misc.html#ga56317f0a31a83eb896e4a987dbd645df) functions provided by the `switchtec-user` library
