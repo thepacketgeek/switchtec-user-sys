@@ -8,6 +8,7 @@
 use std::ffi::{CStr, CString};
 use std::fmt;
 use std::io;
+use std::mem::MaybeUninit;
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 
@@ -93,16 +94,66 @@ impl SwitchtecDeviceGuard {
         unsafe {
             let dev = switchtec_open(path_c.as_ptr());
             if dev.is_null() {
-                let err = CStr::from_ptr(switchtec_strerror()).to_owned();
-                Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    err.into_string()
-                        .unwrap_or_else(|_| "Unknown error".to_owned()),
-                ))
+                Err(get_switchtec_error())
             } else {
                 Ok(Self { inner: dev })
             }
         }
+    }
+
+    /// Get the device name (E.g. "pciswitch0" in "/dev/pciswitch0")
+    ///
+    /// This can fail if the device name is not valid UTF-8
+    ///
+    /// <https://microsemi.github.io/switchtec-user/group__Device.html#ga8d416a587f5e37e818ee937bd0c0dab1>
+    pub fn name(&self) -> io::Result<String> {
+        // SAFETY: We know that device holds a valid/open switchtec device
+        let device_name = unsafe { switchtec_name(self.inner) };
+        device_name.as_string()
+    }
+
+    /// Get the PCIe generation of the device
+    ///
+    /// <https://microsemi.github.io/switchtec-user/group__Device.html#ga9eab19beb39d2104b5defd28787177ae>
+    pub fn boot_phase(&self) -> switchtec_boot_phase {
+        // SAFETY: We know that device holds a valid/open switchtec device
+        unsafe { switchtec_boot_phase(self.inner) }
+    }
+
+    /// Get the firmware version as a user readable string
+    ///
+    /// This can fail if the firmware version is not valid UTF-8
+    ///
+    /// <https://microsemi.github.io/switchtec-user/group__Device.html#gad16f110712bd23170ad69450c361122e>
+    pub fn firmware_version(&self) -> io::Result<String> {
+        const buf_size: usize = 64;
+        let mut buf = MaybeUninit::<[u8; buf_size]>::uninit();
+        // SAFETY: We know that device holds a valid/open switchtec device
+        unsafe {
+            let len =
+                switchtec_get_fw_version(self.inner, buf.as_mut_ptr() as *mut _, buf_size as u64);
+            if len.is_negative() {
+                Err(get_switchtec_error())
+            } else {
+                buf_to_string(&buf.assume_init())
+            }
+        }
+    }
+
+    /// Get the PCIe generation of the device
+    ///
+    /// <https://microsemi.github.io/switchtec-user/group__Device.html#gab9f59d48c410e8dde13acdc519943a26>
+    pub fn generation(&self) -> switchtec_gen {
+        // SAFETY: We know that device holds a valid/open switchtec device
+        unsafe { switchtec_gen(self.inner) }
+    }
+
+    /// Get the partition of the device
+    ///
+    /// <https://microsemi.github.io/switchtec-user/group__Device.html#gac70f47bb86ac6ba1666446f27673cdcf>
+    pub fn partition(&self) -> i32 {
+        // SAFETY: We know that device holds a valid/open switchtec device
+        unsafe { switchtec_partition(self.inner) }
     }
 }
 
@@ -192,4 +243,37 @@ fn cstr_to_string(cstr: *const i8) -> io::Result<String> {
             })
         }
     }
+}
+
+/// Parse a String from a buffer that may have tail-padding
+fn buf_to_string(buf: &[u8]) -> io::Result<String> {
+    let valid_bytes: Vec<u8> = buf
+        .iter()
+        // Filter out null bytes
+        .take_while(|b| b != &&0)
+        .copied()
+        .collect();
+    let cstring = CString::new(valid_bytes)?;
+    cstring.into_raw().as_string()
+}
+
+fn get_switchtec_error() -> io::Error {
+    // SAFETY: We're checking that the returned char* is not null
+    let err_message = unsafe {
+        // https://microsemi.github.io/switchtec-user/group__Device.html#ga595e1d62336ba76c59344352c334fa18
+        let err_str = switchtec_strerror();
+        if err_str.is_null() {
+            return io::Error::new(io::ErrorKind::Other, "Unknown error".to_owned());
+        }
+        err_str
+            .as_string()
+            .unwrap_or_else(|_| "Unknown error".to_owned())
+    };
+    io::Error::new(io::ErrorKind::Other, err_message)
+}
+
+#[test]
+fn test_buf_to_string() {
+    let buf = [51, 46, 55, 48, 32, 66, 48, 52, 70, 0, 0, 0, 0, 0, 0, 0];
+    assert_eq!(&buf_to_string(&buf).unwrap(), "3.70 B04F");
 }
