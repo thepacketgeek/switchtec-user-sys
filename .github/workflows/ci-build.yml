@@ -1,0 +1,42 @@
+name: ci-build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  switchtec_user_sys_build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    - name: checkout submodules
+      run: git submodule update --init
+    - name: lint
+      run: cargo fmt --message-format human -- --check
+    - name: clippy
+      run: cargo clippy --no-deps -- -D warnings
+    - name: build
+      run: cargo build --verbose
+    - name: test
+      env:
+        RUST_LOG: info
+      run: RUST_MIN_STACK=7680000 cargo test --verbose
+    - name: document
+      env:
+        RUSTDOCFLAGS: "-Dwarnings"
+      run: cargo doc --lib

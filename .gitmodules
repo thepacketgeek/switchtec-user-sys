@@ -1,3 +1,3 @@
 [submodule "switchtec-user"]
 	path = switchtec-user
-	url = git@github.com:dcostantino7/switchtec-user.git
+	url = https://github.com/dcostantino7/switchtec-user.git

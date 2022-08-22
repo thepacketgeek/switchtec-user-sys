@@ -1,4 +1,5 @@
-# switchtec-user-sys
+# switchtec-user-sys [![Build](https://img.shields.io/github/workflow/status/thepacketgeek/switchtec-user-sys/ci-build?logo=github)](https://github.com/thepacketgeek/switchtec-user-sys/actions/workflows/ci-build.yml) [![Docs](https://img.shields.io/docsrs/switchtec-user-sys?logo=rust)](https://docs.rs/crate/switchtec-user-sys/latest)
+
 A Rust wrapper for the [`switchtec-user`](https://github.com/Microsemi/switchtec-user) library.
 
 Details and usage instructions for the `switchtec-user` library can be found [here](https://microsemi.github.io/switchtec-user/index.html).
