@@ -25,7 +25,7 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: checkout submodules
-      run: git submodule update --init
+      run: git submodule update --remote
     - name: lint
       run: cargo fmt --message-format human -- --check
     - name: clippy
