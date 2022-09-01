@@ -92,6 +92,18 @@ fn main() -> anyhow::Result<()> {
 }
 ```
 
+# Dependencies
+
+## Bindgen & Clang
+This crate uses [`bindgen`](https://github.com/rust-lang/rust-bindgen) which requires Clang to build: [`bindgen` requirements](https://rust-lang.github.io/rust-bindgen/requirements.html)
+
+## Switchtec submodule
+In order to build the `bindgen` bindings and link the library to the `switchtec-user` C library, the `switchtec-user` submodule needs to be present. The [`build.rs`](build.rs) script will automatically init the submodule, but you can also do this like:
+
+```ignore
+git submodule update --init
+```
+
 # License
 
 `switchtec-user-sys` is both MIT and Apache License, Version 2.0 licensed, as found

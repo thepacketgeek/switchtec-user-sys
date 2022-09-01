@@ -7,6 +7,12 @@ fn main() {
     let out_path = PathBuf::from(&out_dir);
     let orig_dir = env::current_dir().unwrap();
 
+    // Check for clang dependency
+    if Command::new("clang").arg("-v").output().is_err() {
+        eprintln!("Clang is required for bindgen, please check installation instructions: https://rust-lang.github.io/rust-bindgen/requirements.html");
+        std::process::exit(1);
+    }
+
     // Make sure that switchtec-user submodule is available locally
     Command::new("git")
         .arg("submodule")
@@ -19,9 +25,6 @@ fn main() {
     let bindings = bindgen::Builder::default()
         .header("switchtec-user/inc/switchtec/switchtec.h")
         .clang_arg("-Iswitchtec-user/inc")
-        .clang_arg("-Iswitchtec-user/lib")
-        .clang_arg("-Iswitchtec-user/lib/platform")
-        .clang_arg("-Iswitchtec-user/src")
         .rustfmt_bindings(true)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .generate()
