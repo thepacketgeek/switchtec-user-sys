@@ -66,7 +66,14 @@ impl SwitchtecDevice {
     pub fn name(&self) -> io::Result<String> {
         // SAFETY: We know that device holds a valid/open switchtec device
         let device_name = unsafe { switchtec_name(self.inner) };
-        device_name.as_string()
+        if device_name.is_null() {
+            Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "no device name returned",
+            ))
+        } else {
+            device_name.as_string()
+        }
     }
 
     /// Get the PCIe generation of the device
@@ -116,7 +123,9 @@ impl SwitchtecDevice {
 
 impl fmt::Debug for SwitchtecDevice {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("SwitchtecDevice").finish()
+        f.debug_struct("SwitchtecDevice")
+            .field("name", &self.name().as_deref().unwrap_or("unknown"))
+            .finish()
     }
 }
 
