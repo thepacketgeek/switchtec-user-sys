@@ -10,8 +10,7 @@ fn main() -> anyhow::Result<()> {
         .skip(1)
         .next()
         .unwrap_or_else(|| "/dev/pciswitch0".to_owned());
-    let dev = SwitchtecDevice::new(path);
-    let dev = dev.open()?;
+    let dev = SwitchtecDevice::open(path)?;
     unsafe {
         let temp = switchtec_die_temp(*dev);
         println!("Temperature: {}", temp);

@@ -22,7 +22,7 @@ fn main() -> anyhow::Result<()> {
         .next()
         .unwrap_or_else(|| "/dev/pciswitch0".to_owned());
 
-    let device = SwitchtecDevice::new(path).open()?;
+    let device = SwitchtecDevice::open(path)?;
 
     // SAFETY: We know that device holds a valid/open switchtec device
     let (device_name, temperature) = unsafe {
@@ -49,7 +49,7 @@ use switchtec_user_sys::{switchtec_status, switchtec_status_free, SwitchtecDevic
 
 fn main() -> anyhow::Result<()> {
     let path: std::path::PathBuf = "/dev/pciswitch1".into();
-    let device = SwitchtecDevice::new(&path).open()?;
+    let device = SwitchtecDevice::open(&path)?;
 
     // Response struct out-value, to be populated by `switchtec_status`
     // The struct is the same name as the function, so we access this by its

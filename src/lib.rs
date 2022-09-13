@@ -14,42 +14,24 @@ use std::path::Path;
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
-/// `SwitchtecDevice` offers an safer way to work with the underlying [`switchtec_dev`]
+/// `SwitchtecDevice` offers an safer way to work with the underlying [`switchtec_dev`] and
+/// represents an open Switchtec PCI Switch device that can be passed into `switchtec-user` C library functions
 ///
-/// - Provides an `open()` method that can only be called with a `switchtec_dev` that is non-null
-/// - [`SwitchtecDeviceGuard`] closes the Switchtec character device when it goes out of scope
-pub struct SwitchtecDevice<T: AsRef<Path>> {
-    path_ref: T,
+/// - [`SwitchtecDevice`] closes the Switchtec character device when it goes out of scope
+pub struct SwitchtecDevice {
+    inner: *mut switchtec_dev,
 }
 
-impl<T> SwitchtecDevice<T>
-where
-    T: AsRef<Path>,
-{
-    /// Construct a `SwitchtecDevice` for the given path
-    ///
-    /// ```
-    /// use switchtec_user_sys::SwitchtecDevice;
-    ///
-    /// let device = SwitchtecDevice::new("/dev/pciswitch0");
-    /// // OR
-    /// let mut path = std::path::PathBuf::from("/dev");
-    /// path.push("pciswitch1");
-    /// let device = SwitchtecDevice::new(&path);
-    /// ```
-    pub fn new(path: T) -> Self {
-        Self { path_ref: path }
-    }
-
-    /// Open the Switchtec PCIe Switch character device, returning
-    /// a `SwitchtecDeviceGuard` that can be used to pass into
+impl SwitchtecDevice {
+    /// Open the Switchtec PCIe Switch character device at the given `path`,
+    /// returning a `SwitchtecDevice` that can be used to pass into
     /// `switchtec-user` C library functions
     ///
     /// ```no_run
     /// use switchtec_user_sys::{switchtec_die_temp, SwitchtecDevice};
     ///
     /// # fn main() -> anyhow::Result<()> {
-    /// let device = SwitchtecDevice::new("/dev/pciswitch0").open()?;
+    /// let device = SwitchtecDevice::open("/dev/pciswitch0")?;
     ///
     /// // SAFETY: We know that device holds a valid/open switchtec device
     /// let temperature = unsafe { switchtec_die_temp(*device) };
@@ -58,32 +40,7 @@ where
     /// # Ok(())
     /// }
     /// ```
-    pub fn open(&self) -> io::Result<SwitchtecDeviceGuard> {
-        SwitchtecDeviceGuard::new(self.path_ref.as_ref())
-    }
-}
-
-impl<T> fmt::Debug for SwitchtecDevice<T>
-where
-    T: AsRef<Path>,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("SwitchtecDevice")
-            .field("path", &self.path_ref.as_ref())
-            .finish()
-    }
-}
-
-/// Represents an open Switchtec PCI Switch device that can be passed into `switchtec-user` C library functions
-///
-/// Closes the Switchtec character device when this goes out of scope
-#[must_use]
-pub struct SwitchtecDeviceGuard {
-    inner: *mut switchtec_dev,
-}
-
-impl SwitchtecDeviceGuard {
-    fn new<T: AsRef<Path>>(path: T) -> io::Result<Self> {
+    pub fn open<T: AsRef<Path>>(path: T) -> io::Result<Self> {
         let path_c = CString::new(path.as_ref().as_os_str().as_bytes()).map_err(|e| {
             // TODO: change to io::ErrorKind::InvalidFilename when it stabalizes
             //       https://github.com/rust-lang/rust/issues/86442
@@ -157,7 +114,13 @@ impl SwitchtecDeviceGuard {
     }
 }
 
-impl std::ops::Deref for SwitchtecDeviceGuard {
+impl fmt::Debug for SwitchtecDevice {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SwitchtecDevice").finish()
+    }
+}
+
+impl std::ops::Deref for SwitchtecDevice {
     type Target = *mut switchtec_dev;
 
     fn deref(&self) -> &Self::Target {
@@ -165,9 +128,9 @@ impl std::ops::Deref for SwitchtecDeviceGuard {
     }
 }
 
-impl std::ops::Drop for SwitchtecDeviceGuard {
+impl std::ops::Drop for SwitchtecDevice {
     fn drop(&mut self) {
-        // SAFETY: SwitchtecDeviceGuard is only successfully constructed if the `inner` `switchtec_dev`
+        // SAFETY: SwitchtecDevice is only successfully constructed if the `inner` `switchtec_dev`
         // is not null;
         unsafe {
             switchtec_close(self.inner);
