@@ -119,6 +119,20 @@ impl SwitchtecDevice {
         // SAFETY: We know that device holds a valid/open switchtec device
         unsafe { switchtec_partition(self.inner) }
     }
+
+    /// Get the die temperature of the switchtec device (in Celcius)
+    ///
+    /// <https://microsemi.github.io/switchtec-user/group__Misc.html#ga56317f0a31a83eb896e4a987dbd645df>
+    pub fn die_temp(&self) -> io::Result<f32> {
+        // SAFETY: We know that device holds a valid/open switchtec device
+        let temp = unsafe { switchtec_die_temp(self.inner) };
+        if temp.is_sign_negative() {
+            // Negative value represents an error
+            // https://microsemi.github.io/switchtec-user/group__Misc.html#ga56317f0a31a83eb896e4a987dbd645df
+            return Err(get_switchtec_error());
+        }
+        Ok(temp)
+    }
 }
 
 impl fmt::Debug for SwitchtecDevice {
