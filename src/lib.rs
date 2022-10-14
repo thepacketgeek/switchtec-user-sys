@@ -12,7 +12,14 @@ use std::mem::MaybeUninit;
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+/// The raw FFI bindings to `libswitchtec`
+pub mod ffi {
+    include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+}
+
+// re-exported items from `libswitchtec` to make available at the crate level
+mod prelude;
+pub use prelude::*;
 
 /// `SwitchtecDevice` offers an safer way to work with the underlying [`switchtec_dev`] and
 /// represents an open Switchtec PCI Switch device that can be passed into `switchtec-user` C library functions
