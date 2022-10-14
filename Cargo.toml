@@ -1,6 +1,6 @@
 [package]
 name = "switchtec-user-sys"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Mat Wood <thepacketgeek@users.noreply.github.com>"]
 description = "Rust wrapper for the switchtec-user C library"
 categories = ["external-ffi-bindings", "hardware-support"]
@@ -12,6 +12,15 @@ documentation = "https://docs.rs/switchtec-user-sys"
 readme = "README.md"
 repository = "https://github.com/thepacketgeek/switchtec-user-sys"
 links = "switchtec"
+exclude = [
+    "switchtec-user/.github/**",
+    "switchtec-user/cli/**",
+    "switchtec-user/completions/**",
+    "switchtec-user/dist/**",
+    "switchtec-user/doc/**",
+    "switchtec-user/examples/**",
+    "switchtec-user/udev/**",
+]
 
 [dependencies]
 thiserror = "1.0"
