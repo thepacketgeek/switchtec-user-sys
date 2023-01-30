@@ -39,11 +39,11 @@ fn main() {
 
     let root_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let root_path: PathBuf = [&root_dir, "switchtec-user", "configure"].iter().collect();
-    Command::new(&root_path)
+    Command::new(root_path)
         .output()
         .expect("couldn't run ./configure");
 
-    env::set_current_dir(&orig_dir).unwrap();
+    env::set_current_dir(orig_dir).unwrap();
 
     cc::Build::new()
         .include("switchtec-user/inc")
