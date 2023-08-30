@@ -25,7 +25,7 @@ fn main() {
     let bindings = bindgen::Builder::default()
         .header("switchtec-user/inc/switchtec/switchtec.h")
         .clang_arg("-Iswitchtec-user/inc")
-        .rustfmt_bindings(true)
+        .formatter(bindgen::Formatter::Rustfmt)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .generate()
         .expect("Unable to generate bindings");

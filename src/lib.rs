@@ -101,8 +101,7 @@ impl SwitchtecDevice {
         let mut buf = MaybeUninit::<[u8; buf_size]>::uninit();
         // SAFETY: We know that device holds a valid/open switchtec device
         unsafe {
-            let len =
-                switchtec_get_fw_version(self.inner, buf.as_mut_ptr() as *mut _, buf_size as u64);
+            let len = switchtec_get_fw_version(self.inner, buf.as_mut_ptr() as *mut _, buf_size);
             if len.is_negative() {
                 Err(get_switchtec_error())
             } else {
